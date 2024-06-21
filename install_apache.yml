@@ -6,13 +6,34 @@
   - name: Update index
     apt:
       update_cache: yes
+    when: ansible_distribution in ["Debian","Ubuntu"]
   
   - name: install apache2 package
     apt:
       name: apache2
       state: latest
-
+    when: ansible_distribution in ["Debian","Ubuntu"]
+  
   - name: add php support
     apt:
       name: libapache2-mod-php
       state: latest
+    when: ansible_distribution in ["Debian","Ubuntu"]
+
+  
+  - name: Update index
+    dnf:
+      update_cache: yes
+    when: ansible_distribution in ["Fedora"]
+  
+  - name: install apache2 package
+    dnf:
+      name: httpd
+      state: latest
+    when: ansible_distribution in ["Fedora"]
+  
+  - name: add php support
+    dnf:
+      name: php
+      state: latest
+    when: ansible_distribution in ["Fedora"]
