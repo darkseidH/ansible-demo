@@ -4,20 +4,37 @@
   become: true
 
   pre_tasks:
-    - name: install updates (Fedora)
+    - name: updates repos (Fedora)
       tags: always
       dnf:
-        update_only: yes
         update_cache: yes
+      changed_when: false
       when: ansible_distribution == "Fedora"
 
-    - name: install updates (Ubuntu)
+    - name: updates repos (Ubuntu)
       tags: always
       apt:
-        upgrade: dist
         update_cache: yes
+      changed_when: false
       when: ansible_distribution == "Ubuntu"
 
+
+- hosts: all
+  become: true
+  tasks:
+    - name: create a user dark
+      tags: always
+      user:
+        name: dark
+        groups:
+          - root
+
+    - name: add ssh key for dark
+      tags: always
+      ansible.posix.authorized_key:
+        user: dark
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFhAIjE4bLheda9lOYbSEunyJM6ovJb3Dic6/f4zKBtL darkseid@fedora"
+        
 - hosts: web_servers
   become: true
   tasks:
@@ -39,6 +56,30 @@
         state: latest
       when: ansible_distribution == "Fedora"
 
+    - name: start httpd (Fedora)
+      tags: apache,httpd,fedora
+      service:
+        name: httpd
+        state: started
+        enabled: yes
+      when: ansible_distribution == "Fedora"
+
+    - name: change e-mail address for admin
+      tags: apache,httpd,fedora
+      lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^ServerAdmin'
+        line: ServerAdmin chaqchaq9@gmail.com
+      when: ansible_distribution == "Fedora"
+      register: httpd
+
+    - name: restart httpd (Fedora)
+      tags: apache,fedora,httpd
+      service:
+        name: httpd
+        state: restarted
+      when: httpd.changed
+
     - name: copy default html file for site
       tags: apache,httpd,apache2
       copy:
@@ -48,16 +89,17 @@
         group: root
         mode: 0644
 
-
 - hosts: db_servers
   become: true
   tasks:
+
     - name: install mariadb package (Fedora)
       tags: fedora,db,mariadb
       dnf:
         name: mariadb
         state: latest
       when: ansible_distribution == "Fedora"
+    
     - name: install mariadb package (Ubuntu)
       tags: db,mariadb,ubuntu
       apt:
@@ -65,19 +107,34 @@
         state: latest
       when: ansible_distribution == "Ubuntu"
 
-- hosts: file_servers
-  become: true
-  tasks:
-    - name: install samba package
-      tags: samba
-      package:
-        name: samba
-        state: latest
-
 - hosts: docker_servers
   become: true
   tasks:
+
     - name: install docker package
       package:
         name: docker.io
         state: latest
+
+- hosts: workstations
+  become: true
+  tasks:
+    
+    - name: install unzip
+      package:
+        name: unzip
+
+    - name: download terraform
+      get_url:
+        url: https://releases.hashicorp.com/terraform/0.12.28/terraform_0.12.28_linux_amd64.zip
+        dest: /tmp/terraform_0.12.28_linux_amd64.zip
+        mode: 0644
+
+    - name: install terraform
+      unarchive:
+        src: /tmp/terraform_0.12.28_linux_amd64.zip
+        dest: /usr/local/bin
+        mode: 0755
+        owner: root
+        group: root
+        remote_src: yes

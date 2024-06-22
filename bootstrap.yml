@@ -1,0 +1,45 @@
+---
+
+- hosts: all
+  become: true
+
+  pre_tasks:
+    - name: install updates (Fedora)
+      tags: always
+      dnf:
+        update_only: yes
+        update_cache: yes
+      when: ansible_distribution == "Fedora"
+
+    - name: install updates (Ubuntu)
+      tags: always
+      apt:
+        upgrade: dist
+        update_cache: yes
+      when: ansible_distribution == "Ubuntu"
+
+
+- hosts: all
+  become: true
+  tasks:
+    - name: create a user dark
+      tags: always
+      user:
+        name: dark
+        groups:
+          - root
+
+    - name: add ssh key for dark
+      tags: always
+      ansible.posix.authorized_key:
+        user: dark
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFhAIjE4bLheda9lOYbSEunyJM6ovJb3Dic6/f4zKBtL darkseid@fedora"
+    
+    - name: add sudoers file for  dark
+      tags: always
+      ansible.builtin.copy:
+        src: sudoer_dark
+        dest: /etc/sudoers.d/dark
+        owner: root
+        group: root
+        mode: 0440    
