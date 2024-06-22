@@ -1,3 +1,11 @@
+[web_servers]
 192.168.122.90
+
+[db_servers]
 192.168.122.144
+
+[file_servers]
 192.168.122.112
+
+[docker_servers]
+192.168.122.90
