@@ -19,8 +19,8 @@
    tags: apache,apache2,ubuntu
    apt:
      name:
-       - apache2
-       - libapache2-mod-php
+       - "{{ apache_package_name }}"
+       - "{{ php_package_name }}"
      state: latest
    when: ansible_distribution == "Ubuntu"
  
@@ -29,16 +29,9 @@
    lineinfile:
      path: /etc/httpd/conf/httpd.conf
      regexp: '^ServerAdmin'
-     line: ServerAdmin somebody@somewhere.net
+     line: ServerAdmin chaqchaq.hamza@proton.me
    when: ansible_distribution == "Fedora"
-   register: httpd
- 
- - name: restart httpd (Fedora)
-   tags: apache,Fedora,httpd
-   service:
-     name: httpd
-     state: restarted
-   when: httpd.changed    
+   notify: restart_apache
  
  - name: copy html file for site
    tags: apache,apache,apache2,httpd
